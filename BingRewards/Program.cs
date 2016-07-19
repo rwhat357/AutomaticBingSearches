@@ -21,6 +21,7 @@ namespace BingRewards
         private static FirefoxDriver _driver;
         private static WebDriverWait _wait;
         private static IJavaScriptExecutor _jse;
+        private static string _bingUrl;
 
         static void Main(string[] args)
         {
@@ -33,25 +34,6 @@ namespace BingRewards
             CleanUp();
         }
 
-        private static void CleanUp()
-        {
-            _driver.Quit();
-        }
-
-        private static void DoSearches()
-        {
-            for (var i = 0; i < _numberOfSearches; i++)
-            {
-                // If search is made before username is visible, that login will 
-                var usernameAvailable = _wait.Until(ExpectedConditions.ElementIsVisible(By.Id("id_n")));
-                var datetime = DateTime.Now.ToString("h:mm:s tt");
-                var search  = _wait.Until(ExpectedConditions.ElementIsVisible(By.Id("sb_form_q")));
-                search.Clear();
-                search.SendKeys(datetime);
-                search.SendKeys(Keys.Enter);
-            }
-        }
-
         private static void Initialize()
         {
             _defaultUsername = ConfigurationManager.AppSettings["defaultUsername"];
@@ -61,17 +43,30 @@ namespace BingRewards
             _driver = new FirefoxDriver();
             _wait = new WebDriverWait(_driver, TimeSpan.FromSeconds(value: 10));
             _jse = (IJavaScriptExecutor)_driver;
+            _bingUrl = "http://www.bing.com";
+        }
+
+        private static void DoSearches()
+        {
+            for (var i = 0; i < _numberOfSearches; i++)
+            {
+                // If search is made before username is visible, that login will 
+                SafelyFindElement(By.Id("id_n"));
+                var datetime = DateTime.Now.ToString("h:mm:s tt");
+                var search  = SafelyFindElement(By.Id("sb_form_q"));
+                search.Clear();
+                search.SendKeys(datetime);
+                search.SendKeys(Keys.Enter);
+            }
         }
 
         private static void GoToBing()
         {
-            _driver.Navigate().GoToUrl("http://www.bing.com/");
-
-            //var signin = _wait.Until(ExpectedConditions.ElementIsVisible(By.Id("id_s")));
+            _driver.Navigate().GoToUrl(_bingUrl);
             var signin = SafelyFindElement(By.Id("id_s"));
             signin.Click();
 
-            var connect = _wait.Until(ExpectedConditions.ElementIsVisible(By.ClassName("id_link_text")));
+            var connect = SafelyFindElement(By.ClassName("id_link_text"));
             connect.Click();
         }
 
@@ -82,16 +77,18 @@ namespace BingRewards
 
         private static void SignIntoMicrosoft()
         {
-            //_driver.Navigate().GoToUrl("https://login.live.com/login.srf?wa=wsignin1.0&rpsnv=12&ct=1468856874&rver=6.7.6631.0&wp=MBI&wreply=https%3a%2f%2fwww.bing.com%2fsecure%2fPassport.aspx%3frequrl%3dhttp%253a%252f%252fwww.bing.com%252f%253fwlexpsignin%253d1&lc=1033&id=264960");
-
-            var user = _wait.Until(ExpectedConditions.ElementIsVisible((By.TagName("input"))));
-            var pass = _driver.FindElement(By.Id("i0118"));
+            var user = SafelyFindElement(By.TagName("input"));
+            var pass = SafelyFindElement(By.Id("i0118"));
             user.SendKeys(_defaultUsername);
             pass.SendKeys(_defaultPassword);
             
-            var submit = _wait.Until(ExpectedConditions.ElementIsVisible(By.Id("idSIButton9")));
+            var submit = SafelyFindElement(By.Id("idSIButton9"));
             submit.SendKeys(Keys.Enter);
         }
 
+        private static void CleanUp()
+        {
+            _driver.Quit();
+        }
     }
 }
